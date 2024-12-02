@@ -1,0 +1,585 @@
+-- Criação do Script para criar o banco de dados
+CREATE DATABASE Trabalho_Banco_de_Dados;
+-- Tabela Pessoa
+CREATE TABLE Pessoa (
+CPF VARCHAR(11) PRIMARY KEY,
+Data_de_nascimento DATE,
+Nome VARCHAR(100) NOT NULL,
+Email VARCHAR(50) NOT NULL,
+Senha VARCHAR(25) NOT NULL,
+Complemento VARCHAR(50),
+Rua VARCHAR(100),
+Numero VARCHAR(8)
+);
+-- Tabela Cliente
+CREATE TABLE Cliente (
+CPF VARCHAR(11) PRIMARY KEY,
+RG VARCHAR(20) UNIQUE,
+Histórico_cliente TEXT,
+FOREIGN KEY (CPF) REFERENCES Pessoa(CPF)
+);
+-- Tabela Hotel
+CREATE TABLE Hotel (
+ID_Hotel INT PRIMARY KEY,
+Endereco VARCHAR(100) NOT NULL,
+Nome VARCHAR(100) NOT NULL
+);
+-- Tabela Funcionário
+CREATE TABLE Funcionario (
+CPF VARCHAR(11) PRIMARY KEY,
+Carteira_de_trabalho VARCHAR(20) UNIQUE,
+Cargo VARCHAR(100) NOT NULL,
+Horario VARCHAR(100) NOT NULL,
+Salario DECIMAL(10, 2) NOT NULL,
+ID_Hotel INT,
+FOREIGN KEY (CPF) REFERENCES Pessoa(CPF),
+FOREIGN KEY (ID_Hotel) REFERENCES Hotel(ID_Hotel)
+);
+-- Tabela Serviços
+CREATE TABLE Servicos (
+ID_Servicos INT PRIMARY KEY,
+Descrição TEXT,
+Precos MONEY,
+);
+-- Tabela Quarto
+CREATE TABLE Quarto (
+Numero_Quarto INT,
+Disponibilidade VARCHAR(20) NOT NULL,
+Nivel INT NOT NULL,
+Diaria DECIMAL(10, 2) NOT NULL,
+Capacidade INT NOT NULL,
+Tipo VARCHAR(50),
+ID_Hotel INT,
+PRIMARY KEY (Numero_Quarto, ID_Hotel),
+FOREIGN KEY (ID_Hotel) REFERENCES Hotel(ID_Hotel)
+);
+-- Tabela Presta
+CREATE TABLE Presta (
+CPF VARCHAR(11),
+ID_Servicos INT,
+PRIMARY KEY (CPF, ID_Servicos),
+FOREIGN KEY (CPF) REFERENCES Funcionario(CPF),
+FOREIGN KEY (ID_servicos) REFERENCES Servicos(ID_servicos)
+);
+-- Tabela Reserva
+CREATE TABLE Reserva (
+Codigo_Reserva INT PRIMARY KEY,
+ID_Hotel INT,
+CPF VARCHAR(11),
+Data DATE NOT NULL,
+Check_in DATE NOT NULL,
+Check_out DATE NOT NULL,
+Numero_Pessoas INT NOT NULL,
+Avaliacoes TEXT,
+Data_Cancelamento DATE,
+Pagamento_Informacoes VARCHAR(100),
+Pagamento_Multas DECIMAL(10, 2),
+Pagamento_Status VARCHAR(20),
+Pagamento_Preco_total DECIMAL(10, 2),
+Numero_Quarto INT NOT NULL,
+FOREIGN KEY (ID_Hotel) REFERENCES Hotel(ID_Hotel),
+FOREIGN KEY (CPF) REFERENCES Pessoa(CPF),
+FOREIGN KEY (Numero_Quarto, ID_Hotel) REFERENCES Quarto(Numero_Quarto,
+ID_Hotel),
+);
+-- Tabela Registrar
+CREATE TABLE Registrar (
+ID_servicos INT,
+Codigo_Reserva INT,
+Quantidade INT NOT NULL,
+Data DATE NOT NULL,
+PRIMARY KEY (ID_servicos, Codigo_Reserva),
+FOREIGN KEY (ID_servicos) REFERENCES Servicos(ID_servicos),
+FOREIGN KEY (Codigo_Reserva) REFERENCES Reserva(Codigo_Reserva)
+);
+CREATE INDEX IX_Funcionario_ID_Hotel ON Funcionario(ID_Hotel);
+CREATE INDEX IX_Reserva_ID_Hotel ON Reserva(ID_Hotel);
+CREATE INDEX IX_Reserva_CPF ON Reserva(CPF);
+CREATE INDEX IX_Numero_Quarto ON Reserva (Numero_Quarto);
+Modelo de criação de elementos de todas as tabelas,
+HOTEL,
+INSERT INTO Hotel (ID_Hotel, Endereco, Nome)
+VALUES (1, '1249 Avenida Ipanema, Macaé, Brasil’, ‘Hotel Palace');
+SERVIÇOS,
+INSERT INTO Servicos (ID_Servicos, Descrição, Precos)
+VALUES (1, 'Limpeza Diária', 50.00);
+QUARTO,
+INSERT INTO Quarto (Numero_Quarto, Disponibilidade, Nivel, Diaria, Capacidade, Tipo,
+ID_Hotel)
+VALUES (101, 'Disponível', 1, 150.00, 2, 'Standard', 1);
+CLIENTE,
+EXEC InserirCliente
+@CPF = '1234578901',
+@Data_de_nascimento = '1990-01-01',
+@Nome = 'João Silva',
+@Email = 'joao.silva@email.com',
+@Senha = 'senha123',
+@Complemento = 'Apartamento 123',
+@Rua = 'Rua Principal',
+@Numero = '123',
+@RG = 'ABC123456',
+@Histórico_cliente = 'Esse é o histórico do Cliente...';
+FUNCIONÁRIO,
+EXEC InserirFuncionario
+@CPF = '98765432109',
+@Data_de_nascimento = '1985-05-15',
+@Nome = 'Maria Oliveira',
+@Email = 'maria.oliveira@example.com',
+@Senha = 'senha456',
+@Complemento = 'Apt 456',
+@Rua = 'Rua Secundária',
+@Numero = '456',
+@Carteira_de_trabalho = 'FGHIJ54321',
+@Cargo = 'Atendente',
+@Horario = 'Horário Flexível',
+@Salario = 4000.00,
+@ID_Hotel = 1;
+EXEC SolicitarReserva
+@Codigo_Reserva = 10249,
+@CPFCliente = '1234578901',
+@ID_Hotel = 1,
+@Numero_Quarto = 101,
+@Data = '2023-12-01',
+@Check_in = '2023-12-10',
+@Check_out = '2023-12-15',
+@Numero_Pessoas = 2,
+@Avaliacoes = 'Boa experiência',
+@Pagamento_Informacoes = 'Cartão de crédito',
+@Pagamento_Multas = 0.00,
+@Pagamento_Status = 'Pago';
+EXEC InserirRegistroServico
+@ID_Servico = 1,
+@Codigo_Reserva =10249,
+@Quantidade = 2,
+@Data = '2023-12-20';
+SELECT *
+FROM DadosCompletosCliente
+WHERE CPF = '1234578901';
+SELECT *
+FROM DadosCompletosFuncionario
+WHERE CPF = '98765432109';
+-- Consulta à View com ID_Hotel específico
+SELECT *
+FROM QuartosDisponiveis
+WHERE ID_Hotel = 1;
+● Script para criação de views, procedures e
+triggers do banco de dados
+P. criar Cliente ou Funcionário
+Create procedure InserirCliente
+@CPF VARCHAR (11),
+@Data_de_nascimento DATE,
+@Nome VARCHAR (100),
+@Email VARCHAR (50),
+@Senha VARCHAR(25),
+@Complemento VARCHAR(50),
+@Rua VARCHAR(100),
+@Numero VARCHAR(8),
+@RG VARCHAR(20),
+@Histórico_cliente TEXT
+AS
+BEGIN
+BEGIN TRANSACTION;
+INSERT INTO Pessoa (CPF, Data_de_nascimento, Nome, Email, Senha, Complemento,
+Rua, Numero)
+VALUES (@CPF, @Data_de_nascimento, @Nome, @Email, @Senha, @Complemento,
+@Rua, @Numero);
+IF @@ROWCOUNT > 0
+BEGIN
+INSERT INTO Cliente (CPF, RG, Histórico_cliente)
+VALUES (@CPF, @RG, @Histórico_cliente);
+IF @@ROWCOUNT > 0
+BEGIN
+COMMIT TRANSACTION;
+END
+ELSE
+BEGIN
+ROLLBACK TRANSACTION;
+END
+END
+ELSE
+BEGIN
+ROLLBACK TRANSACTION;
+END
+END;
+Create procedure InserirFuncionario
+@CPF VARCHAR (11),
+@Data_de_nascimento DATE,
+@Nome VARCHAR (100),
+@Email VARCHAR (50),
+@Senha VARCHAR(25),
+@Complemento VARCHAR(50),
+@Rua VARCHAR(100),
+@Numero VARCHAR(8),
+@Carteira_de_trabalho VARCHAR(20),
+@Cargo VARCHAR(100),
+@Horario VARCHAR(100),
+@Salario DECIMAL(10, 2),
+@ID_Hotel INT
+AS
+BEGIN
+BEGIN TRANSACTION;
+INSERT INTO Pessoa (CPF, Data_de_nascimento, Nome, Email, Senha, Complemento,
+Rua, Numero)
+VALUES (@CPF, @Data_de_nascimento, @Nome, @Email, @Senha, @Complemento,
+@Rua, @Numero);
+IF @@ROWCOUNT > 0
+BEGIN
+INSERT INTO Funcionario (CPF, Carteira_de_trabalho, Cargo, Horario, Salario,
+ID_Hotel)
+VALUES (@CPF, @Carteira_de_trabalho, @Cargo, @Horario, @Salario, @ID_Hotel);
+IF @@ROWCOUNT > 0
+COMMIT TRANSACTION;
+ELSE
+ROLLBACK TRANSACTION;
+END
+ELSE
+ROLLBACK TRANSACTION;
+END;
+P. solicitação de Reserva com T.
+CREATE PROCEDURE SolicitarReserva
+@Codigo_Reserva INT,
+@CPFCliente VARCHAR(11),
+@ID_Hotel INT,
+@Numero_Quarto INT,
+@Data DATE,
+@Check_in DATE,
+@Check_out DATE,
+@Numero_Pessoas INT,
+@Avaliacoes TEXT,
+@Pagamento_Informacoes VARCHAR(100),
+@Pagamento_Multas DECIMAL(10, 2),
+@Pagamento_Status VARCHAR(20)
+AS
+BEGIN
+BEGIN TRANSACTION;
+IF @@ROWCOUNT <= 0
+BEGIN
+-- Atualizar a disponibilidade do quarto para 'Ocupado'
+UPDATE Quarto
+SET Disponibilidade = 'Ocupado'
+WHERE ID_Hotel = @ID_Hotel
+AND Numero_Quarto = @Numero_Quarto;
+IF @@ROWCOUNT <= 0
+BEGIN
+PRINT('Quarto ou hotel inexistente, ou quarto ocupado')
+ROLLBACK TRANSACTION;
+END
+ELSE
+BEGIN
+-- Se tudo estiver correto, inserir a solicitação de reserva
+INSERT INTO Reserva (
+Codigo_Reserva,
+ID_Hotel,
+CPF,
+Data,
+Check_in,
+Check_out,
+Numero_Pessoas,
+Avaliacoes,
+Data_Cancelamento,
+Pagamento_Informacoes,
+Pagamento_Multas,
+Pagamento_Status,
+Numero_Quarto
+)
+VALUES (
+@Codigo_Reserva,
+@ID_Hotel,
+@CPFCliente,
+@Data,
+@Check_in,
+@Check_out,
+@Numero_Pessoas,
+@Avaliacoes,
+NULL,
+@Pagamento_Informacoes,
+@Pagamento_Multas,
+@Pagamento_Status,
+@Numero_Quarto
+);
+IF @@ROWCOUNT <= 0
+BEGIN
+PRINT('Falha ao inserir reserva')
+ROLLBACK TRANSACTION;
+END
+ELSE
+BEGIN
+-- Se tudo estiver correto, confirmar a transação
+COMMIT TRANSACTION;
+END
+END
+END
+ELSE
+BEGIN
+PRINT( 'Solicitação de Reserva não realizada')
+ROLLBACK;
+END
+END;
+-- P. Serviço T. preço Reserva
+-- Create procedure InserirRegistroServico
+CREATE PROCEDURE InserirRegistroServico
+@ID_Servico INT,
+@Codigo_Reserva INT,
+@Quantidade INT,
+@Data DATE
+AS
+BEGIN
+BEGIN TRANSACTION;
+-- Verificar se o serviço e a reserva existem antes de inserir o registro
+IF EXISTS (SELECT 1 FROM Servicos WHERE ID_Servicos = @ID_Servico) AND
+EXISTS (SELECT 1 FROM Reserva WHERE Codigo_Reserva = @Codigo_Reserva)
+BEGIN
+-- Inserir o registro na tabela Registrar
+INSERT INTO Registrar (ID_Servicos, Codigo_Reserva, Quantidade, Data)
+VALUES (@ID_Servico, @Codigo_Reserva, @Quantidade, @Data);
+IF @@ROWCOUNT > 0
+BEGIN
+COMMIT TRANSACTION;
+END
+ELSE
+BEGIN
+PRINT('Registro não realizado')
+ROLLBACK TRANSACTION;
+END
+END
+ELSE
+BEGIN
+PRINT('Serviço ou Reserva inexistente')
+ROLLBACK TRANSACTION;
+END
+END;
+-- Transação Para atualizar o Preço em Reserva
+-- Crie o trigger para atualizar o preço total em Reserva
+CREATE TRIGGER AtualizarPrecoReserva
+ON Registrar
+AER INSERT
+AS
+BEGIN
+-- Atualizar o preço total em Reserva para o Codigo_Reserva afetado
+UPDATE Reserva
+SET Pagamento_Preco_total = Pagamento_Preco_total +
+(SELECT s.Precos * r.Quantidade
+FROM inserted r
+JOIN Servicos s ON r.ID_servicos = s.ID_servicos
+WHERE Reserva.Codigo_Reserva = r.Codigo_Reserva)
+FROM Reserva
+WHERE EXISTS (
+SELECT 1
+FROM inserted r
+WHERE Reserva.Codigo_Reserva = r.Codigo_Reserva
+);
+END;
+-- Transação de Reserva deletada, disponibilidade.
+CREATE TRIGGER ReservaCancelada
+ON Reserva
+AER UPDATE
+AS
+BEGIN
+IF (SELECT TOP 1 1 FROM INSERTED WHERE Pagamento_Status = 'Cancelada' AND
+Pagamento_Status != 'Cancelada') IS NOT NULL
+BEGIN
+DECLARE @v_numero_quarto INT;
+-- Obter o número do quarto associado à reserva
+SELECT @v_numero_quarto = Numero_Quarto
+FROM Reserva
+WHERE ID_Hotel = (SELECT TOP 1 ID_Hotel FROM INSERTED)
+AND Numero_Quarto = (SELECT TOP 1 Numero_Quarto FROM INSERTED);
+-- Atualizar a disponibilidade do quarto para '0' (disponível)
+UPDATE Quarto
+SET Disponibilidade = 'Disponível'
+WHERE ID_Hotel = (SELECT TOP 1 ID_Hotel FROM INSERTED)
+AND Numero_Quarto = @v_numero_quarto;
+END;
+END;
+-- Transação de update Reserva, evitar inconsistência.
+CREATE TRIGGER verifica_conflitos_reserva_quarto
+ON Reserva
+AER UPDATE
+AS
+BEGIN
+DECLARE @ID_Hotel INT;
+DECLARE @Numero_Quarto INT;
+DECLARE @Nova_Check_in DATE;
+DECLARE @Nova_Check_out DATE;
+SELECT @ID_Hotel = ID_Hotel, @Numero_Quarto = Numero_Quarto, @Nova_Check_in
+= Check_in, @Nova_Check_out = Check_out
+FROM INSERTED;
+IF EXISTS (
+SELECT 1
+FROM Reserva
+WHERE ID_Hotel = @ID_Hotel
+AND Numero_Quarto = @Numero_Quarto
+AND Codigo_Reserva <> (SELECT Codigo_Reserva FROM INSERTED)
+AND (
+(@Nova_Check_in BETWEEN Check_in AND Check_out)
+OR (@Nova_Check_out BETWEEN Check_in AND Check_out)
+OR (Check_in BETWEEN @Nova_Check_in AND @Nova_Check_out)
+OR (Check_out BETWEEN @Nova_Check_in AND @Nova_Check_out)
+)
+)
+BEGIN
+-- Conflito detectado, impedir a mudança
+PRINT('Quarto ocupado')
+ROLLBACK;
+END
+END;
+-- Transação de Serviços, update Preço e total em Reserva
+CREATE TRIGGER AtualizarPrecoServico
+ON Servicos
+AER UPDATE
+AS
+BEGIN
+IF UPDATE(Precos)
+BEGIN
+UPDATE Reserva
+SET Pagamento_Preco_total = Pagamento_Preco_total + (INSERTED.Precos -
+DELETED.Precos)
+FROM Reserva
+INNER JOIN Registrar ON Reserva.Codigo_Reserva = Registrar.Codigo_Reserva
+INNER JOIN INSERTED ON INSERTED.ID_Servicos = Registrar.ID_Servicos
+INNER JOIN DELETED ON DELETED.ID_Servicos = Registrar.ID_Servicos;
+END
+END;
+-- Transação de Serviços, preço Deletado, Altera Preço total em
+Reserva
+CREATE TRIGGER servico_preco_removido
+ON Servicos
+AER DELETE
+AS
+BEGIN
+UPDATE Reserva
+SET Pagamento_Preco_total = Pagamento_Preco_total - d.Precos
+FROM Reserva r
+INNER JOIN Registrar reg ON r.Codigo_Reserva = reg.Codigo_Reserva
+INNER JOIN deleted d ON reg.ID_Servicos = d.ID_Servicos
+WHERE reg.ID_Servicos IS NOT NULL;
+IF @@ROWCOUNT <= 0
+ROLLBACK TRANSACTION;
+END;
+View de Dados de Cliente
+CREATE VIEW DadosCompletosCliente AS
+SELECT
+P.CPF,
+P.Data_de_nascimento,
+P.Nome,
+P.Email,
+P.Complemento,
+P.Rua,
+P.Numero,
+C.RG,
+C.Histórico_cliente
+FROM
+Pessoa P
+JOIN
+Cliente C ON P.CPF = C.CPF;
+go
+-- Exemplo de consulta à DadosCompletosCliente para um CPF específico
+-- View de Dados de Funcionário
+-- Criação da View para informações do Funcionário
+CREATE VIEW DadosCompletosFuncionario AS
+SELECT
+P.CPF,
+P.Data_de_nascimento,
+P.Nome,
+P.Email,
+P.Complemento,
+P.Rua,
+P.Numero,
+F.Carteira_de_trabalho,
+F.Cargo,
+F.Horario,
+F.Salario
+FROM
+Pessoa P
+JOIN
+Funcionario F ON P.CPF = F.CPF;
+SELECT *
+FROM DadosCompletosFuncionario
+WHERE CPF = '98765432109';
+P. Reserva por Cliente específico
+-- Criação do Procedimento Armazenado para obter informações da reserva do cliente
+CREATE PROCEDURE ObterReservaCliente
+@CPFParametro VARCHAR(11),
+@NomeParametro VARCHAR(100)
+AS
+BEGIN
+SELECT
+R.Codigo_Reserva,
+R.Pagamento_Status,
+R.Pagamento_Preco_total,
+Q.Numero_Quarto
+FROM
+Reserva R
+JOIN
+Quarto Q ON R.Numero_Quarto = Q.Numero_Quarto AND R.ID_Hotel = Q.ID_Hotel
+JOIN
+Cliente C ON R.CPF = C.CPF
+JOIN
+Pessoa P ON C.CPF = P.CPF
+WHERE
+C.CPF = @CPFParametro
+AND P.Nome = @NomeParametro;
+END;
+T. Preço final da Reserva, cálculo
+-- Criação do Trigger para calcular o preço final da reserva
+CREATE TRIGGER CalcularPrecoFinal
+ON Reserva
+AER INSERT
+AS
+BEGIN
+DECLARE @Diaria DECIMAL(10, 2);
+DECLARE @DiasReserva INT;
+DECLARE @ID_Hotel INT;
+DECLARE @Numero_Quarto INT;
+-- Obtém as informações da reserva recém-inserida
+SELECT TOP 1
+@ID_Hotel = r.ID_Hotel,
+@Numero_Quarto = r.Numero_Quarto,
+@Diaria = q.Diaria,
+@DiasReserva = DATEDIFF(DAY, r.Check_in, r.Check_out)
+FROM
+inserted r
+INNER JOIN Quarto q ON r.ID_Hotel = q.ID_Hotel AND r.Numero_Quarto =
+q.Numero_Quarto;
+-- Calcula o preço total da reserva
+UPDATE Reserva
+SET Pagamento_Preco_total = @Diaria * @DiasReserva
+WHERE
+ID_Hotel = @ID_Hotel
+ – 
+ – 
+AND Numero_Quarto = @Numero_Quarto
+AND Codigo_Reserva IN (SELECT Codigo_Reserva FROM inserted);
+END;
+V. Quartos disponíveis por Hotel
+-- Criação da View
+CREATE VIEW QuartosDisponiveis AS
+SELECT Numero_Quarto,
+ID_Hotel,
+Diaria,
+Nivel,
+Tipo
+FROM Quarto
+WHERE Disponibilidade = 'Disponível';
+DROPS de V., T., P. e do Database
+-- Drops das Procedures
+DROP PROCEDURE InserirCliente;
+DROP PROCEDURE InserirFuncionario;
+DROP PROCEDURE SolicitarReserva;
+DROP PROCEDURE InserirRegistroServico;
+DROP PROCEDURE ObterReservaCliente;
+-- Drops das Triggers
+DROP TRIGGER ReservaCancelada;
+DROP TRIGGER verifica_conflitos_reserva_quarto;
+DROP TRIGGER AtualizarPrecoServico;
+DROP TRIGGER servico_preco_removido;
+DROP TRIGGER AtualizarPrecoReserva;
+DROP TRIGGER CalcularPrecoFinal;
+-- Drops das Views
+DROP VIEW DadosCompletosCliente;
+DROP VIEW DadosCompletosFuncionario;
+DROP VIEW QuartosDisponiveis;
+-- Drop do Database
+ – 
+ – 
+DROP DATABASE Trabalho_Banco_de_Dados;
